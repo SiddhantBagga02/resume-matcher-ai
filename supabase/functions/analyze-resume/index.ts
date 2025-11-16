@@ -38,20 +38,48 @@ Deno.serve(async (req) => {
       
       const fileBuffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
       
-      // For simplicity, we'll handle text files directly
-      // For PDF/DOCX, in production you'd use proper parsing libraries
       if (resumeFileName.endsWith('.txt')) {
         resumeText = new TextDecoder().decode(fileBuffer);
-      } else if (resumeFileName.endsWith('.pdf') || resumeFileName.endsWith('.docx')) {
-        // For demo purposes, we'll use a placeholder
-        // In production, you'd integrate pdf-parse or mammoth libraries
-        resumeText = new TextDecoder().decode(fileBuffer);
+      } else if (resumeFileName.endsWith('.pdf')) {
+        // For PDF files, we'll use a simple text extraction approach
+        // Convert buffer to string and extract visible text
+        const pdfText = new TextDecoder().decode(fileBuffer);
+        // Extract text between content streams (simple approach)
+        const textMatches = pdfText.match(/\(([^)]+)\)/g);
+        if (textMatches) {
+          resumeText = textMatches
+            .map(match => match.slice(1, -1))
+            .join(' ')
+            .replace(/\\[nrt]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        }
+        if (!resumeText || resumeText.length < 50) {
+          throw new Error('Could not extract sufficient text from PDF. Please try uploading as TXT or ensure the PDF contains selectable text.');
+        }
+      } else if (resumeFileName.endsWith('.docx')) {
+        // For DOCX, we'll try to extract text from the XML content
+        const docxText = new TextDecoder().decode(fileBuffer);
+        const textMatches = docxText.match(/>([^<]+)</g);
+        if (textMatches) {
+          resumeText = textMatches
+            .map(match => match.slice(1, -1))
+            .filter(text => text.trim().length > 2)
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        }
+        if (!resumeText || resumeText.length < 50) {
+          throw new Error('Could not extract sufficient text from DOCX. Please try uploading as TXT.');
+        }
       } else {
-        throw new Error('Unsupported file format');
+        throw new Error('Unsupported file format. Please upload PDF, DOCX, or TXT files.');
       }
+      
+      console.log('Extracted text length:', resumeText.length);
     } catch (parseError) {
       console.error('File parsing error:', parseError);
-      throw new Error('Failed to parse resume file. Please ensure it\'s a valid PDF, DOCX, or TXT file.');
+      throw new Error(parseError.message || 'Failed to parse resume file. Please ensure it\'s a valid PDF, DOCX, or TXT file.');
     }
 
     // Call Lovable AI for analysis
@@ -131,7 +159,12 @@ Analyze the match between this resume and job description.`;
     } catch (parseError) {
       console.error('JSON parsing error:', parseError);
       console.error('AI response:', content);
-      throw new Error('Failed to parse AI response');
+      
+      // If AI returned an error message instead of JSON, throw a more helpful error
+      if (content.includes("I'm sorry") || content.includes("cannot") || content.includes("unable")) {
+        throw new Error('AI could not process the resume. Please ensure the file contains readable text.');
+      }
+      throw new Error('Failed to parse AI response. Please try again.');
     }
 
     // Validate the response structure

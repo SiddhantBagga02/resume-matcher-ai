@@ -10,6 +10,13 @@ interface AnalysisResponse {
   missingKeywords: string[];
   matchedKeywords: string[];
   suggestions: string[];
+  keywordCategories: {
+    technical: string[];
+    soft: string[];
+    domain: string[];
+    tools: string[];
+  };
+  resumeText: string;
 }
 
 Deno.serve(async (req) => {
@@ -88,20 +95,24 @@ Deno.serve(async (req) => {
       throw new Error('AI service not configured');
     }
 
-    const systemPrompt = `You are an expert HR recruiter and resume analyst. Analyze the provided resume and job description to determine compatibility.
-
-Your analysis must:
-1. Calculate a compatibility score from 0-100 based on how well the resume matches the job requirements
-2. Extract the top 10 most important skills/keywords from the job description
-3. Identify which important keywords are MISSING from the resume
-4. Identify which important keywords are PRESENT in the resume
-5. Provide 2-3 brief, actionable suggestions for improving the resume
+    const systemPrompt = `You are an expert resume analyzer and career advisor. Analyze the given resume against the job description and provide:
+1. A compatibility score (0-100)
+2. List of missing keywords that should be added
+3. List of matched keywords found in the resume
+4. Categorize keywords into: technical (programming languages, frameworks), soft (communication, leadership), domain (industry knowledge), tools (software, platforms)
+5. Actionable suggestions to improve the resume
 
 Return ONLY valid JSON in this exact format:
 {
   "score": 85,
   "missingKeywords": ["keyword1", "keyword2"],
   "matchedKeywords": ["keyword3", "keyword4"],
+  "keywordCategories": {
+    "technical": ["skill1", "skill2"],
+    "soft": ["skill3", "skill4"],
+    "domain": ["knowledge1"],
+    "tools": ["tool1", "tool2"]
+  },
   "suggestions": ["suggestion1", "suggestion2"]
 }`;
 
@@ -176,6 +187,19 @@ Analyze the match between this resume and job description.`;
     ) {
       throw new Error('Invalid analysis result format');
     }
+
+    // Ensure keywordCategories exists
+    if (!analysisResult.keywordCategories) {
+      analysisResult.keywordCategories = {
+        technical: [],
+        soft: [],
+        domain: [],
+        tools: []
+      };
+    }
+
+    // Include resume text in response
+    analysisResult.resumeText = resumeText;
 
     return new Response(
       JSON.stringify(analysisResult),

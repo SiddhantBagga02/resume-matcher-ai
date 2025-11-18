@@ -1,0 +1,28 @@
+# Web UI
+streamlit==1.39.0
+
+# Optional API layer (uncomment if using FastAPI)
+# fastapi==0.115.0
+# uvicorn[standard]==0.30.0
+
+# Resume parsing
+PyPDF2==3.0.1
+python-docx==0.8.11
+
+# NLP & embeddings
+sentence-transformers==2.2.2
+torch==2.1.2
+tqdm==4.66.4
+
+# Data handling
+numpy==1.26.4
+pandas==2.2.2
+
+# Similarity / ML utils
+scikit-learn==1.4.2
+
+# Config / environment
+python-dotenv==1.0.1
+
+# HTTP requests (if using external APIs)
+requests==2.32.3

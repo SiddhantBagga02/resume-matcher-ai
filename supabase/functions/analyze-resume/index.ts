@@ -1,5 +1,3 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -86,7 +84,8 @@ Deno.serve(async (req) => {
       console.log('Extracted text length:', resumeText.length);
     } catch (parseError) {
       console.error('File parsing error:', parseError);
-      throw new Error(parseError.message || 'Failed to parse resume file. Please ensure it\'s a valid PDF, DOCX, or TXT file.');
+      const errorMessage = parseError instanceof Error ? parseError.message : 'Failed to parse resume file. Please ensure it\'s a valid PDF, DOCX, or TXT file.';
+      throw new Error(errorMessage);
     }
 
     // Call Lovable AI for analysis

@@ -82,7 +82,18 @@ const Auth = () => {
             </div>
           </div>
           <CardTitle className="text-3xl font-bold">ResumeMatch</CardTitle>
-          <CardDescription className="text-base">AI-Powered Resume Analysis</CardDescription>
+          <CardDescription className="text-base">
+            AI-Powered Resume Analysis Platform
+            <div className="mt-3 p-3 bg-muted rounded-lg text-sm">
+              <p className="font-medium mb-1">Sign in to access:</p>
+              <ul className="text-left space-y-1 text-muted-foreground">
+                <li>✓ Personal Dashboard</li>
+                <li>✓ Resume Analysis Tool</li>
+                <li>✓ Analysis History</li>
+                <li>✓ Keyword Highlighting</li>
+              </ul>
+            </div>
+          </CardDescription>
         </CardHeader>
 
         <CardContent>

@@ -4,6 +4,7 @@ import { FileText, History, LogOut, PlusCircle, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface NavigationProps {
   user?: any;
@@ -66,6 +67,7 @@ const Navigation = ({ user }: NavigationProps) => {
           </div>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             {user ? (
               <>
                 <Button variant="ghost" size="sm" className="hidden md:flex">

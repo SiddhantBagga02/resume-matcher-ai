@@ -92,11 +92,20 @@ Deno.serve(async (req) => {
       
       console.log('Extracted text length:', resumeText.length);
       
-      // Aggressively clean text: remove ALL control characters and problematic Unicode that PostgreSQL can't handle
+      // Ultra-aggressive cleaning: keep ONLY safe printable ASCII and basic punctuation
+      // This ensures PostgreSQL can store the text without Unicode escape sequence errors
       resumeText = resumeText
-        .replace(/[\x00-\x1F\x7F-\x9F]/g, ' ') // Replace ALL control characters with space
-        .replace(/[^\x20-\x7E\xA0-\uFFFF]/g, ' ') // Keep only printable ASCII and valid Unicode
-        .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
+        .split('')
+        .map(char => {
+          const code = char.charCodeAt(0);
+          // Keep only: space (32), basic punctuation/numbers/letters (33-126), and some extended chars (160-255)
+          if ((code >= 32 && code <= 126) || (code >= 160 && code <= 255)) {
+            return char;
+          }
+          return ' '; // Replace everything else with space
+        })
+        .join('')
+        .replace(/\s+/g, ' ') // Normalize multiple spaces
         .trim();
       
       if (resumeText.length < 50) {

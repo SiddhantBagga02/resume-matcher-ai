@@ -49,7 +49,14 @@ const Analyze = () => {
       return;
     }
 
+    if (!user) {
+      toast.error("You must be logged in to analyze resumes");
+      navigate("/auth");
+      return;
+    }
+
     setIsAnalyzing(true);
+    console.log("Starting analysis...", { fileName: selectedFile.name, fileSize: selectedFile.size });
 
     try {
       const reader = new FileReader();
@@ -58,6 +65,9 @@ const Analyze = () => {
         reader.onerror = reject;
         reader.readAsDataURL(selectedFile);
       });
+
+      console.log("File loaded, calling edge function...");
+      toast.loading("Analyzing your resume...", { id: "analyzing" });
 
       const { data, error } = await supabase.functions.invoke("analyze-resume", {
         body: {
@@ -68,30 +78,57 @@ const Analyze = () => {
         },
       });
 
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      console.log("Edge function response:", { data, error });
+
+      if (error) {
+        console.error("Edge function error:", error);
+        throw error;
+      }
+      
+      if (data?.error) {
+        console.error("Analysis error:", data.error);
+        throw new Error(data.error);
+      }
+
+      if (!data) {
+        throw new Error("No data received from analysis");
+      }
+
+      console.log("Analysis complete, saving to database...");
+      toast.loading("Saving results...", { id: "analyzing" });
 
       // Save to history
-      const { error: insertError } = await supabase.from("analysis_history").insert({
-        user_id: user.id,
-        resume_filename: selectedFile.name,
-        job_title: jobTitle || "Job Position",
-        job_description: jobDescription,
-        score: data.score,
-        missing_keywords: data.missingKeywords,
-        matched_keywords: data.matchedKeywords,
-        suggestions: data.suggestions,
-        keyword_categories: data.keywordCategories || {},
-        resume_text: data.resumeText || "",
-      });
+      const { data: insertData, error: insertError } = await supabase
+        .from("analysis_history")
+        .insert({
+          user_id: user.id,
+          resume_filename: selectedFile.name,
+          job_title: jobTitle || "Job Position",
+          job_description: jobDescription,
+          score: data.score,
+          missing_keywords: data.missingKeywords,
+          matched_keywords: data.matchedKeywords,
+          suggestions: data.suggestions,
+          keyword_categories: data.keywordCategories || {},
+          resume_text: data.resumeText || "",
+        })
+        .select();
 
-      if (insertError) console.error("Failed to save history:", insertError);
+      if (insertError) {
+        console.error("Failed to save history:", insertError);
+        toast.error("Analysis completed but failed to save. Please try again.");
+        throw insertError;
+      }
 
-      toast.success("Analysis complete!");
+      console.log("Successfully saved to database:", insertData);
+      toast.success("Analysis complete!", { id: "analyzing" });
+      
+      // Small delay to ensure database transaction completes
+      await new Promise(resolve => setTimeout(resolve, 500));
       navigate("/history");
     } catch (error: any) {
       console.error("Analysis error:", error);
-      toast.error(error.message || "Failed to analyze resume. Please try again.");
+      toast.error(error.message || "Failed to analyze resume. Please try again.", { id: "analyzing" });
     } finally {
       setIsAnalyzing(false);
     }

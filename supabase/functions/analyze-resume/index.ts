@@ -91,6 +91,14 @@ Deno.serve(async (req) => {
       }
       
       console.log('Extracted text length:', resumeText.length);
+      
+      // Clean text: remove null bytes and other problematic characters that PostgreSQL can't store
+      resumeText = resumeText
+        .replace(/\u0000/g, '') // Remove null bytes
+        .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '') // Remove other control characters
+        .trim();
+      
+      console.log('Cleaned text length:', resumeText.length);
     } catch (parseError) {
       console.error('File parsing error:', parseError);
       const errorMessage = parseError instanceof Error ? parseError.message : 'Failed to parse resume file. Please ensure it\'s a valid PDF, DOCX, or TXT file.';

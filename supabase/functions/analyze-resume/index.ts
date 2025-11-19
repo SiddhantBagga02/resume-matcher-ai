@@ -18,12 +18,21 @@ interface AnalysisResponse {
 }
 
 Deno.serve(async (req) => {
+  console.log('Edge function called:', { method: req.method, headers: Object.fromEntries(req.headers) });
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { resumeFile, resumeFileName, jobDescription } = await req.json();
+    const body = await req.json();
+    console.log('Request body received:', { 
+      hasResumeFile: !!body.resumeFile, 
+      resumeFileName: body.resumeFileName,
+      jobDescriptionLength: body.jobDescription?.length 
+    });
+    
+    const { resumeFile, resumeFileName, jobDescription } = body;
 
     if (!resumeFile || !jobDescription) {
       return new Response(
@@ -88,9 +97,12 @@ Deno.serve(async (req) => {
       throw new Error(errorMessage);
     }
 
+    console.log('Calling AI for analysis...');
+    
     // Call Lovable AI for analysis
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
+      console.error('LOVABLE_API_KEY not configured');
       throw new Error('AI service not configured');
     }
 
@@ -153,11 +165,19 @@ Analyze the match between this resume and job description.`;
     }
 
     const aiData = await aiResponse.json();
+    console.log('AI response received:', { 
+      hasChoices: !!aiData.choices, 
+      choicesLength: aiData.choices?.length 
+    });
+    
     const content = aiData.choices?.[0]?.message?.content;
 
     if (!content) {
+      console.error('No content in AI response:', aiData);
       throw new Error('Invalid AI response');
     }
+    
+    console.log('Parsing AI response...');
 
     // Parse the JSON response
     let analysisResult: AnalysisResponse;
@@ -199,6 +219,13 @@ Analyze the match between this resume and job description.`;
 
     // Include resume text in response
     analysisResult.resumeText = resumeText;
+
+    console.log('Analysis successful:', { 
+      score: analysisResult.score,
+      missingKeywordsCount: analysisResult.missingKeywords.length,
+      matchedKeywordsCount: analysisResult.matchedKeywords.length,
+      suggestionsCount: analysisResult.suggestions.length
+    });
 
     return new Response(
       JSON.stringify(analysisResult),

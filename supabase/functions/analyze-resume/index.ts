@@ -5,6 +5,7 @@ const corsHeaders = {
 
 interface AnalysisResponse {
   score: number;
+  scoreExplanation: string;
   missingKeywords: string[];
   matchedKeywords: string[];
   suggestions: string[];
@@ -15,6 +16,47 @@ interface AnalysisResponse {
     tools: string[];
   };
   resumeText: string;
+  atsIssues: Array<{
+    issue: string;
+    severity: 'high' | 'medium' | 'low';
+    fix: string;
+  }>;
+  rewriteSuggestions: Array<{
+    original: string;
+    suggested: string;
+    reason: string;
+  }>;
+  generatedSummary: string;
+  skillWeights: {
+    critical: string[];
+    important: string[];
+    niceToHave: string[];
+  };
+  experienceGap: string;
+  seniorityFit: string;
+  impactAnalysis: Array<{
+    bullet: string;
+    hasImpact: boolean;
+    suggestion?: string;
+  }>;
+  actionVerbAnalysis: Array<{
+    weak: string;
+    strong: string;
+    context: string;
+  }>;
+  redundancies: string[];
+  hiddenRequirements: string[];
+  mustHaveVsNiceToHave: {
+    mustHave: string[];
+    niceToHave: string[];
+  };
+  improvementPlan: {
+    critical: string[];
+    medium: string[];
+    polish: string[];
+  };
+  confidenceLevel: number;
+  tailoringScore: number;
 }
 
 Deno.serve(async (req) => {
@@ -128,26 +170,77 @@ Deno.serve(async (req) => {
       throw new Error('AI service not configured');
     }
 
-    const systemPrompt = `You are an expert resume analyzer and career advisor. Analyze the given resume against the job description and provide:
-1. A compatibility score (0-100)
-2. List of missing keywords that should be added
-3. List of matched keywords found in the resume
-4. Categorize keywords into: technical (programming languages, frameworks), soft (communication, leadership), domain (industry knowledge), tools (software, platforms)
-5. Actionable suggestions to improve the resume
+    const systemPrompt = `You are an expert resume analyzer, career advisor, and ATS specialist. Analyze the given resume against the job description with extreme depth and provide comprehensive, actionable feedback.
+
+IMPORTANT: Never invent or hallucinate skills that aren't in the resume. Only analyze what's actually present.
 
 Return ONLY valid JSON in this exact format:
 {
-  "score": 85,
+  "score": 75,
+  "scoreExplanation": "Strong match on technical skills (Python, AWS). Weak match on leadership keywords. Missing key requirement: Kubernetes experience.",
   "missingKeywords": ["keyword1", "keyword2"],
   "matchedKeywords": ["keyword3", "keyword4"],
   "keywordCategories": {
-    "technical": ["skill1", "skill2"],
-    "soft": ["skill3", "skill4"],
-    "domain": ["knowledge1"],
-    "tools": ["tool1", "tool2"]
+    "technical": ["Python", "JavaScript"],
+    "soft": ["leadership", "communication"],
+    "domain": ["fintech", "healthcare"],
+    "tools": ["AWS", "Docker"]
   },
-  "suggestions": ["suggestion1", "suggestion2"]
-}`;
+  "suggestions": ["Add quantified achievements", "Include Kubernetes projects"],
+  "atsIssues": [
+    {"issue": "Missing standard 'Experience' section header", "severity": "high", "fix": "Add clear section headers like 'Work Experience', 'Education', 'Skills'"},
+    {"issue": "Using tables or columns that ATS may not parse", "severity": "medium", "fix": "Use simple single-column format"}
+  ],
+  "rewriteSuggestions": [
+    {"original": "Worked on various projects", "suggested": "Led 5 cross-functional projects resulting in $2M revenue increase", "reason": "Adds specificity, leadership, and quantified impact"}
+  ],
+  "generatedSummary": "Results-driven Software Engineer with 5+ years of experience in Python and cloud technologies. Proven track record of...",
+  "skillWeights": {
+    "critical": ["Python", "AWS", "System Design"],
+    "important": ["Docker", "CI/CD"],
+    "niceToHave": ["GraphQL", "Terraform"]
+  },
+  "experienceGap": "Job requires 5+ years, resume shows approximately 3-4 years. Consider highlighting project complexity to offset.",
+  "seniorityFit": "Resume reads as mid-level while job targets senior. Emphasize leadership and architectural decisions.",
+  "impactAnalysis": [
+    {"bullet": "Managed team of developers", "hasImpact": false, "suggestion": "Managed team of 8 developers, delivering 3 major features ahead of schedule"},
+    {"bullet": "Increased sales by 40%", "hasImpact": true}
+  ],
+  "actionVerbAnalysis": [
+    {"weak": "Helped with", "strong": "Spearheaded", "context": "Use 'Spearheaded' when you led an initiative"},
+    {"weak": "Worked on", "strong": "Architected", "context": "Use 'Architected' for technical design work"}
+  ],
+  "redundancies": ["'Team player' mentioned 3 times", "Python listed in both Skills and Experience redundantly"],
+  "hiddenRequirements": ["Implies need for cross-team collaboration based on 'stakeholder' mentions", "Ownership mindset expected from 'end-to-end' language"],
+  "mustHaveVsNiceToHave": {
+    "mustHave": ["Python", "5+ years experience", "AWS"],
+    "niceToHave": ["Kubernetes", "Machine Learning"]
+  },
+  "improvementPlan": {
+    "critical": ["Add Kubernetes experience or projects", "Quantify achievements with numbers"],
+    "medium": ["Add leadership examples", "Include cloud certifications"],
+    "polish": ["Improve action verbs", "Add industry-specific keywords"]
+  },
+  "confidenceLevel": 85,
+  "tailoringScore": 60
+}
+
+Analyze thoroughly:
+1. Score (0-100) with plain-English explanation of why
+2. Missing and matched keywords categorized
+3. ATS compatibility issues with severity and fixes
+4. Specific bullet rewrite suggestions (not generic advice)
+5. Custom professional summary for this exact job
+6. Skill weighting based on job priority (critical/important/nice-to-have)
+7. Experience gap analysis (years, seniority level)
+8. Impact detection in bullets (flag vague ones, praise specific ones)
+9. Weak action verbs with stronger alternatives
+10. Redundancies in the resume
+11. Hidden/implied requirements from job description
+12. Must-have vs nice-to-have classification
+13. One-page improvement plan (critical/medium/polish)
+14. Confidence level in your analysis (0-100)
+15. Tailoring score - how customized is this resume for this job (0-100)`;
 
     const userPrompt = `RESUME:
 ${resumeText}
@@ -155,7 +248,7 @@ ${resumeText}
 JOB DESCRIPTION:
 ${jobDescription}
 
-Analyze the match between this resume and job description.`;
+Analyze the match between this resume and job description with full depth.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -229,24 +322,32 @@ Analyze the match between this resume and job description.`;
       throw new Error('Invalid analysis result format');
     }
 
-    // Ensure keywordCategories exists
-    if (!analysisResult.keywordCategories) {
-      analysisResult.keywordCategories = {
-        technical: [],
-        soft: [],
-        domain: [],
-        tools: []
-      };
-    }
-
-    // Include resume text in response
+    // Ensure all fields have defaults
+    analysisResult.keywordCategories = analysisResult.keywordCategories || { technical: [], soft: [], domain: [], tools: [] };
+    analysisResult.scoreExplanation = analysisResult.scoreExplanation || 'Analysis completed.';
+    analysisResult.atsIssues = analysisResult.atsIssues || [];
+    analysisResult.rewriteSuggestions = analysisResult.rewriteSuggestions || [];
+    analysisResult.generatedSummary = analysisResult.generatedSummary || '';
+    analysisResult.skillWeights = analysisResult.skillWeights || { critical: [], important: [], niceToHave: [] };
+    analysisResult.experienceGap = analysisResult.experienceGap || 'Unable to determine experience gap.';
+    analysisResult.seniorityFit = analysisResult.seniorityFit || 'Unable to determine seniority fit.';
+    analysisResult.impactAnalysis = analysisResult.impactAnalysis || [];
+    analysisResult.actionVerbAnalysis = analysisResult.actionVerbAnalysis || [];
+    analysisResult.redundancies = analysisResult.redundancies || [];
+    analysisResult.hiddenRequirements = analysisResult.hiddenRequirements || [];
+    analysisResult.mustHaveVsNiceToHave = analysisResult.mustHaveVsNiceToHave || { mustHave: [], niceToHave: [] };
+    analysisResult.improvementPlan = analysisResult.improvementPlan || { critical: [], medium: [], polish: [] };
+    analysisResult.confidenceLevel = analysisResult.confidenceLevel || 75;
+    analysisResult.tailoringScore = analysisResult.tailoringScore || 50;
     analysisResult.resumeText = resumeText;
 
     console.log('Analysis successful:', { 
       score: analysisResult.score,
       missingKeywordsCount: analysisResult.missingKeywords.length,
       matchedKeywordsCount: analysisResult.matchedKeywords.length,
-      suggestionsCount: analysisResult.suggestions.length
+      suggestionsCount: analysisResult.suggestions.length,
+      atsIssuesCount: analysisResult.atsIssues.length,
+      rewriteSuggestionsCount: analysisResult.rewriteSuggestions.length
     });
 
     return new Response(

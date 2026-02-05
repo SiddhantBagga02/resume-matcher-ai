@@ -9,10 +9,40 @@ import { Trash2, FileText, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import MatchResults from "@/components/MatchResults";
 
+interface AnalysisHistoryItem {
+  id: string;
+  user_id: string;
+  resume_filename: string;
+  job_title: string;
+  job_description: string;
+  score: number;
+  missing_keywords: string[];
+  matched_keywords: string[];
+  suggestions: string[];
+  keyword_categories: any;
+  resume_text: string;
+  created_at: string;
+  score_explanation?: string;
+  ats_issues?: any[];
+  rewrite_suggestions?: any[];
+  generated_summary?: string;
+  skill_weights?: any;
+  experience_gap?: string;
+  seniority_fit?: string;
+  impact_analysis?: any[];
+  action_verb_analysis?: any[];
+  redundancies?: any[];
+  hidden_requirements?: any[];
+  must_have_vs_nice_to_have?: any;
+  improvement_plan?: any;
+  confidence_level?: number;
+  tailoring_score?: number;
+}
+
 const History = () => {
   const [user, setUser] = useState<any>(null);
-  const [history, setHistory] = useState<any[]>([]);
-  const [selectedAnalysis, setSelectedAnalysis] = useState<any>(null);
+  const [history, setHistory] = useState<AnalysisHistoryItem[]>([]);
+  const [selectedAnalysis, setSelectedAnalysis] = useState<AnalysisHistoryItem | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,7 +75,7 @@ const History = () => {
       .order("created_at", { ascending: false });
 
     if (!error && data) {
-      setHistory(data);
+      setHistory(data as AnalysisHistoryItem[]);
     }
   };
 
@@ -78,7 +108,7 @@ const History = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">Analysis History</h1>
-          <p className="text-lg text-muted-foreground">Review your past resume analyses</p>
+          <p className="text-lg text-muted-foreground">Review your past resume analyses with comprehensive insights</p>
         </div>
 
         {history.length === 0 ? (
@@ -136,20 +166,35 @@ const History = () => {
               ))}
             </div>
 
-            <div className="lg:sticky lg:top-4 lg:h-fit">
+            <div className="lg:sticky lg:top-4 lg:h-fit lg:max-h-[calc(100vh-6rem)] lg:overflow-auto">
               {selectedAnalysis ? (
                 <MatchResults
                   score={selectedAnalysis.score}
-                  missingKeywords={selectedAnalysis.missing_keywords}
-                  matchedKeywords={selectedAnalysis.matched_keywords}
-                  suggestions={selectedAnalysis.suggestions}
+                  scoreExplanation={selectedAnalysis.score_explanation}
+                  missingKeywords={selectedAnalysis.missing_keywords || []}
+                  matchedKeywords={selectedAnalysis.matched_keywords || []}
+                  suggestions={selectedAnalysis.suggestions || []}
                   keywordCategories={selectedAnalysis.keyword_categories}
                   resumeText={selectedAnalysis.resume_text}
+                  atsIssues={selectedAnalysis.ats_issues}
+                  rewriteSuggestions={selectedAnalysis.rewrite_suggestions}
+                  generatedSummary={selectedAnalysis.generated_summary}
+                  skillWeights={selectedAnalysis.skill_weights}
+                  experienceGap={selectedAnalysis.experience_gap}
+                  seniorityFit={selectedAnalysis.seniority_fit}
+                  impactAnalysis={selectedAnalysis.impact_analysis}
+                  actionVerbAnalysis={selectedAnalysis.action_verb_analysis}
+                  redundancies={selectedAnalysis.redundancies}
+                  hiddenRequirements={selectedAnalysis.hidden_requirements}
+                  mustHaveVsNiceToHave={selectedAnalysis.must_have_vs_nice_to_have}
+                  improvementPlan={selectedAnalysis.improvement_plan}
+                  confidenceLevel={selectedAnalysis.confidence_level}
+                  tailoringScore={selectedAnalysis.tailoring_score}
                 />
               ) : (
                 <Card>
                   <CardContent className="py-12 text-center">
-                    <p className="text-muted-foreground">Select an analysis to view details</p>
+                    <p className="text-muted-foreground">Select an analysis to view comprehensive details</p>
                   </CardContent>
                 </Card>
               )}

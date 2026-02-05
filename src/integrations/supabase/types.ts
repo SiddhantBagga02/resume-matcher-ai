@@ -16,45 +16,90 @@ export type Database = {
     Tables: {
       analysis_history: {
         Row: {
+          action_verb_analysis: Json | null
+          ats_issues: Json | null
+          confidence_level: number | null
           created_at: string
+          experience_gap: string | null
+          generated_summary: string | null
+          hidden_requirements: Json | null
           id: string
+          impact_analysis: Json | null
+          improvement_plan: Json | null
           job_description: string
           job_title: string | null
           keyword_categories: Json | null
           matched_keywords: string[] | null
           missing_keywords: string[] | null
+          must_have_vs_nice_to_have: Json | null
+          redundancies: Json | null
           resume_filename: string
           resume_text: string | null
+          rewrite_suggestions: Json | null
           score: number
+          score_explanation: string | null
+          seniority_fit: string | null
+          skill_weights: Json | null
           suggestions: string[] | null
+          tailoring_score: number | null
           user_id: string | null
         }
         Insert: {
+          action_verb_analysis?: Json | null
+          ats_issues?: Json | null
+          confidence_level?: number | null
           created_at?: string
+          experience_gap?: string | null
+          generated_summary?: string | null
+          hidden_requirements?: Json | null
           id?: string
+          impact_analysis?: Json | null
+          improvement_plan?: Json | null
           job_description: string
           job_title?: string | null
           keyword_categories?: Json | null
           matched_keywords?: string[] | null
           missing_keywords?: string[] | null
+          must_have_vs_nice_to_have?: Json | null
+          redundancies?: Json | null
           resume_filename: string
           resume_text?: string | null
+          rewrite_suggestions?: Json | null
           score: number
+          score_explanation?: string | null
+          seniority_fit?: string | null
+          skill_weights?: Json | null
           suggestions?: string[] | null
+          tailoring_score?: number | null
           user_id?: string | null
         }
         Update: {
+          action_verb_analysis?: Json | null
+          ats_issues?: Json | null
+          confidence_level?: number | null
           created_at?: string
+          experience_gap?: string | null
+          generated_summary?: string | null
+          hidden_requirements?: Json | null
           id?: string
+          impact_analysis?: Json | null
+          improvement_plan?: Json | null
           job_description?: string
           job_title?: string | null
           keyword_categories?: Json | null
           matched_keywords?: string[] | null
           missing_keywords?: string[] | null
+          must_have_vs_nice_to_have?: Json | null
+          redundancies?: Json | null
           resume_filename?: string
           resume_text?: string | null
+          rewrite_suggestions?: Json | null
           score?: number
+          score_explanation?: string | null
+          seniority_fit?: string | null
+          skill_weights?: Json | null
           suggestions?: string[] | null
+          tailoring_score?: number | null
           user_id?: string | null
         }
         Relationships: []

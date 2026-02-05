@@ -67,7 +67,7 @@ const Analyze = () => {
       });
 
       console.log("File loaded, calling edge function...");
-      toast.loading("Analyzing your resume...", { id: "analyzing" });
+      toast.loading("Analyzing your resume with AI...", { id: "analyzing" });
 
       const { data, error } = await supabase.functions.invoke("analyze-resume", {
         body: {
@@ -95,9 +95,9 @@ const Analyze = () => {
       }
 
       console.log("Analysis complete, saving to database...");
-      toast.loading("Saving results...", { id: "analyzing" });
+      toast.loading("Saving comprehensive results...", { id: "analyzing" });
 
-      // Save to history
+      // Save to history with all new fields
       const { data: insertData, error: insertError } = await supabase
         .from("analysis_history")
         .insert({
@@ -106,11 +106,26 @@ const Analyze = () => {
           job_title: jobTitle || "Job Position",
           job_description: jobDescription,
           score: data.score,
-          missing_keywords: data.missingKeywords,
-          matched_keywords: data.matchedKeywords,
-          suggestions: data.suggestions,
+          missing_keywords: data.missingKeywords || [],
+          matched_keywords: data.matchedKeywords || [],
+          suggestions: data.suggestions || [],
           keyword_categories: data.keywordCategories || {},
           resume_text: data.resumeText || "",
+          score_explanation: data.scoreExplanation || "",
+          ats_issues: data.atsIssues || [],
+          rewrite_suggestions: data.rewriteSuggestions || [],
+          generated_summary: data.generatedSummary || "",
+          skill_weights: data.skillWeights || {},
+          experience_gap: data.experienceGap || "",
+          seniority_fit: data.seniorityFit || "",
+          impact_analysis: data.impactAnalysis || [],
+          action_verb_analysis: data.actionVerbAnalysis || [],
+          redundancies: data.redundancies || [],
+          hidden_requirements: data.hiddenRequirements || [],
+          must_have_vs_nice_to_have: data.mustHaveVsNiceToHave || {},
+          improvement_plan: data.improvementPlan || {},
+          confidence_level: data.confidenceLevel || 75,
+          tailoring_score: data.tailoringScore || 50,
         })
         .select();
 
@@ -121,7 +136,7 @@ const Analyze = () => {
       }
 
       console.log("Successfully saved to database:", insertData);
-      toast.success("Analysis complete!", { id: "analyzing" });
+      toast.success("Comprehensive analysis complete!", { id: "analyzing" });
       
       // Small delay to ensure database transaction completes
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -145,7 +160,7 @@ const Analyze = () => {
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">New Analysis</h1>
-          <p className="text-lg text-muted-foreground">Upload your resume and job description to get started</p>
+          <p className="text-lg text-muted-foreground">Upload your resume and job description to get comprehensive AI-powered insights</p>
         </div>
 
         <div className="mb-6">
